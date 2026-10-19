@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPI Bahasa Jawa - Belajar Krama</title>
+    <style>
+        /* --- BACKGROUND & LAYOUT --- */
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #704214 0%, #1a0f05 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none; /* Mencegah murid memblok teks secara tidak sengaja */
+        }
+
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; display: flex;
+            justify-content: space-between; align-items: center; padding: 15px 30px;
+            box-sizing: border-box; z-index: 500;
+        }
+
+        .judul-game {
+            margin: 0; font-size: 32px; font-weight: 900; color: #FFD700;
+            letter-spacing: 2px; text-shadow: 2px 2px 4px #000, 0 0 15px rgba(255, 215, 0, 0.6);
+            font-family: 'Georgia', serif;
+        }
+
+        .btn-fullscreen {
+            background-color: rgba(255, 255, 255, 0.1); color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4); padding: 10px 20px;
+            border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+            transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-fullscreen:hover { background-color: rgba(255, 255, 255, 0.3); border-color: #FFD700; color: #FFD700; }
+
+        /* --- MEJA & BENDA (HOTSPOT) --- */
+        #game-container {
+            position: relative; width: 100vw; height: 28vw; max-width: 100%; max-height: 100vh;
+            background-image: url('meja.png'); /* Gambar mejanya */
+            background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8); margin-top: 50px;
+        }
+
+        .hotspot {
+            position: absolute; cursor: pointer; border-radius: 8px;
+            background-color: rgba(255, 0, 0, 0); /* Transparan */
+            transition: all 0.2s ease-in-out; display: flex;
+            justify-content: center; align-items: center; color: transparent;
+        }
+        .hotspot:hover { background-color: rgba(255, 215, 0, 0.2); box-shadow: 0 0 15px #FFD700; }
+        .terkunci {
+            background-color: rgba(0, 0, 0, 0.6) !important; border: 2px solid #4CAF50;
+            pointer-events: none; box-shadow: none; color: white; font-size: 2vw; font-weight: bold;
+        }
+
+        /* --- POP-UP SOAL & KOTAK --- */
+        #popup {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000;
+        }
+        .popup-content {
+            background: #fff; padding: 25px; border-radius: 15px; text-align: center;
+            width: 90%; max-width: 650px; box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+        }
+        .kotak-area { display: flex; justify-content: space-around; margin: 25px 0; }
+        .kotak {
+            width: 150px; height: 110px; border: 3px dashed #bbb; border-radius: 12px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: #fafafa; transition: all 0.2s; cursor: pointer;
+        }
+        .kotak:hover { background: #eef; border-color: #666; }
+        .kotak-judul { font-weight: bold; margin-bottom: 8px; color: #555; font-size: 14px; pointer-events: none; }
+        
+        .kata-area { display: flex; justify-content: center; gap: 15px; margin-top: 30px; min-height: 60px; }
+        .kata {
+            padding: 12px 24px; background: #ffcc00; border-radius: 8px; cursor: pointer;
+            font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: #333; transition: 0.2s;
+        }
+        .kata.terpilih { transform: scale(1.15); border: 2px solid #000; background: #ff9800; color: white; }
+        .kata.benar { background: #4CAF50 !important; color: white; cursor: default; border: none; transform: scale(1); box-shadow: none; pointer-events: none; }
+        
+        #btn-tutup {
+            display: none; margin-top: 25px; padding: 12px 30px; font-size: 16px; font-weight: bold;
+            cursor: pointer; background: #2196F3; color: white; border: none; border-radius: 8px;
+        }
+        #btn-tutup:hover { background: #1e88e5; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <h1 class="judul-game">BELAJAR KRAMA</h1>
+        <button class="btn-fullscreen" onclick="toggleFullScreen()">⛶ Full Screen</button>
+    </div>
+
+    <div id="game-container"></div>
+
+    <div id="popup">
+        <div class="popup-content">
+            <h2 id="judul-teka-teki">Teka-Teki</h2>
+            <p style="color:#555;"><b>Cara main:</b> Tarik kata ke kotak, atau KLIK kata lalu KLIK kotaknya.</p>
+            <div class="kotak-area">
+                <div class="kotak" data-target="indo"><div class="kotak-judul">Bahasa Indonesia</div></div>
+                <div class="kotak" data-target="ngoko"><div class="kotak-judul">Ngoko</div></div>
+                <div class="kotak" data-target="krama"><div class="kotak-judul">Krama</div></div>
+            </div>
+            <div class="kata-area" id="tempat-kata"></div>
+            <button id="btn-tutup" onclick="tutupPopup()">Selesai & Lanjutkan</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } 
+            else if (document.exitFullscreen) { document.exitFullscreen(); }
+        }
+
+        // TEPAT 20 BENDA & 20 SOAL
+        const gameData = [
+            { id: 1, top: '10.5%', left: '5.2%', width: '11.5%', height: '24.5%', nama: 'Buku', indo: 'Makan', ngoko: 'Mangan', krama: 'Dhahar', terkunci: false },
+            { id: 2, top: '10.5%', left: '20%', width: '9.2%', height: '24.5%', nama: 'Pepak', indo: 'Tidur', ngoko: 'Turu', krama: 'Sare', terkunci: false },
+            { id: 3, top: '5.5%', left: '34.5%', width: '5.3%', height: '27.5%', nama: 'Wayang 1', indo: 'Saya', ngoko: 'Aku', krama: 'Kula', terkunci: false },
+            { id: 4, top: '1.2%', left: '42.8%', width: '7.1%', height: '31.5%', nama: 'Wayang 2', indo: 'Mandi', ngoko: 'Adus', krama: 'Siram', terkunci: false },
+            { id: 5, top: '14.2%', left: '52.3%', width: '9.1%', height: '14%', nama: 'Blangkon 1', indo: 'Minum', ngoko: 'Ngombe', krama: 'Ngunjuk', terkunci: false },
+            { id: 6, top: '10.2%', left: '62.8%', width: '8.5%', height: '20.2%', nama: 'Blangkon 2', indo: 'Pergi', ngoko: 'Lunga', krama: 'Tindak', terkunci: false },
+            { id: 7, top: '11.5%', left: '72.5%', width: '9.4%', height: '20.5%', nama: 'Keris 1', indo: 'Datang', ngoko: 'Teka', krama: 'Rawuh', terkunci: false },
+            { id: 8, top: '10%', left: '81.8%', width: '13.5%', height: '17%', nama: 'Keris 2', indo: 'Duduk', ngoko: 'Lungguh', krama: 'Pinarak', terkunci: false },
+            { id: 9, top: '34.2%', left: '16.2%', width: '9.4%', height: '22%', nama: 'Gong', indo: 'Berdiri', ngoko: 'Ngadeg', krama: 'Jumeneng', terkunci: false },
+            { id: 10, top: '35.8%', left: '27.5%', width: '10.2%', height: '22%', nama: 'Kendang', indo: 'Melihat', ngoko: 'Ndeleng', krama: 'Mirsani', terkunci: false },
+            { id: 11, top: '37.5%', left: '39.4%', width: '10.8%', height: '18.2%', nama: 'Kendatig', indo: 'Bicara', ngoko: 'Ngomong', krama: 'Ngendika', terkunci: false },
+            { id: 12, top: '38.2%', left: '51.8%', width: '8.4%', height: '19.2%', nama: 'Kain Batik', indo: 'Berjalan', ngoko: 'Mlaku', krama: 'Mlampah', terkunci: false },
+            { id: 13, top: '40.8%', left: '62.2%', width: '7.2%', height: '15.5%', nama: 'Saron', indo: 'Membawa', ngoko: 'Nggawa', krama: 'Ngasta', terkunci: false },
+            { id: 14, top: '33.8%', left: '87%', width: '8.8%', height: '22.2%', nama: 'Kenong', indo: 'Memberi', ngoko: 'Menehi', krama: 'Maringi', terkunci: false },
+            { id: 15, top: '65.2%', left: '0.8%', width: '13.5%', height: '17%', nama: 'Bonang', indo: 'Bertanya', ngoko: 'Takon', krama: 'Nyuwun pirsa', terkunci: false },
+            { id: 16, top: '66%', left: '15.1%', width: '12.5%', height: '15.8%', nama: 'Slenthem', indo: 'Pulang', ngoko: 'Bali', krama: 'Kondur', terkunci: false },
+            { id: 17, top: '66.8%', left: '28.1%', width: '12.4%', height: '14.8%', nama: 'Gender', indo: 'Baju', ngoko: 'Klambi', krama: 'Ageman', terkunci: false },
+            { id: 18, top: '62.2%', left: '42%', width: '5.8%', height: '25.8%', nama: 'Rebab', indo: 'Kepala', ngoko: 'Sirah', krama: 'Mustaka', terkunci: false },
+            { id: 19, top: '67.2%', left: '49.4%', width: '8.6%', height: '19.8%', nama: 'Suling', indo: 'Tangan', ngoko: 'Tangan', krama: 'Asta', terkunci: false },
+            { id: 20, top: '61.5%', left: '90.8%', width: '6.2%', height: '25.8%', nama: 'Topeng', indo: 'Beli', ngoko: 'Tuku', krama: 'Mundhut', terkunci: false }
+        ];
+
+        let bendaAktif = null;
+        let skorBenar = 0;
+        let kataTerpilih = null; // Menyimpan kata yang sedang di-klik (fitur HP)
+
+        window.onload = function() {
+            const container = document.getElementById('game-container');
+            gameData.forEach(data => {
+                let div = document.createElement('div');
+                div.className = 'hotspot';
+                div.id = 'benda-' + data.id;
+                div.style.top = data.top; div.style.left = data.left;
+                div.style.width = data.width; div.style.height = data.height;
+                div.onclick = () => bukaPopup(data); 
+                container.appendChild(div);
+            });
+        };
+
+        function bukaPopup(data) {
+            if(data.terkunci) return; 
+            bendaAktif = data;
+            skorBenar = 0;
+            kataTerpilih = null;
+            document.getElementById('judul-teka-teki').innerText = "Materi: " + data.nama;
+            document.getElementById('popup').style.display = 'flex';
+            document.getElementById('btn-tutup').style.display = 'none';
+            document.querySelectorAll('.kotak .kata').forEach(el => el.remove());
+
+            let daftarKata = [
+                { teks: data.indo, tipe: 'indo' },
+                { teks: data.ngoko, tipe: 'ngoko' },
+                { teks: data.krama, tipe: 'krama' }
+            ].sort(() => Math.random() - 0.5);
+
+            const tempatKata = document.getElementById('tempat-kata');
+            tempatKata.innerHTML = ''; 
+
+            daftarKata.forEach(k => {
+                let span = document.createElement('div');
+                span.className = 'kata';
+                span.innerText = k.teks;
+                span.draggable = true; 
+                span.dataset.tipe = k.tipe;
+
+                // Fitur 1: KLIK (Untuk HP/Layar Sentuh)
+                span.onclick = function() {
+                    if (this.classList.contains('benar')) return; // Kalau sudah benar, abaikan
+                    document.querySelectorAll('.kata').forEach(el => el.classList.remove('terpilih'));
+                    this.classList.add('terpilih');
+                    kataTerpilih = this;
+                };
+
+                // Fitur 2: DRAG (Untuk Laptop/Mouse)
+                span.ondragstart = function(e) {
+                    e.dataTransfer.setData('tipe', e.target.dataset.tipe);
+                    e.target.id = 'sedang-ditarik'; 
+                    kataTerpilih = this; // Set juga sebagai kata terpilih
+                };
+                span.ondragend = function(e) { e.target.id = ''; }
+
+                tempatKata.appendChild(span);
+            });
+        }
+
+        // LOGIKA PENERIMA KOTAK (Bisa Drop atau Klik)
+        document.querySelectorAll('.kotak').forEach(kotak => {
+            // Jika kotak di-klik (Sistem HP)
+            kotak.onclick = function() {
+                if (!kataTerpilih) return; // Harus pilih kata dulu
+                cekJawaban(kataTerpilih, this);
+            };
+
+            // Jika kotak di-drop (Sistem Laptop)
+            kotak.ondragover = function(e) { e.preventDefault(); };
+            kotak.ondrop = function(e) {
+                e.preventDefault();
+                let elemenDitarik = document.getElementById('sedang-ditarik');
+                if (elemenDitarik) cekJawaban(elemenDitarik, this);
+            };
+        });
+
+        // FUNGSI CEK JAWABAN
+        function cekJawaban(elemenKata, elemenKotak) {
+            let targetKotak = elemenKotak.dataset.target;
+            if(elemenKata.dataset.tipe === targetKotak) {
+                elemenKata.classList.remove('terpilih');
+                elemenKata.classList.add('benar'); 
+                elemenKata.draggable = false; 
+                elemenKotak.appendChild(elemenKata); 
+                kataTerpilih = null;
+                skorBenar++;
+
+                if(skorBenar === 3) {
+                    document.getElementById('btn-tutup').style.display = 'inline-block';
+                }
+            } else {
+                alert("Kurang pas! Coba cocokan lagi artinya."); 
+                elemenKata.classList.remove('terpilih');
+                kataTerpilih = null;
+            }
+        }
+
+        function tutupPopup() {
+            document.getElementById('popup').style.display = 'none';
+            bendaAktif.terkunci = true;
+            let elemenHotspot = document.getElementById('benda-' + bendaAktif.id);
+            elemenHotspot.classList.add('terkunci');
+            elemenHotspot.innerHTML = '✔️'; 
+        }
+    </script>
+</body>
+</html>
