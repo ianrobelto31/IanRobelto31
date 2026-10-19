@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SINAU KRAMA</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #1e1e24;
+            color: #f5f5f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Tombol Full Screen */
+        .fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #e2b007;
+            color: #1e1e24;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .fullscreen-btn:hover {
+            background-color: #fce38a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            text-align: center;
+            color: #e2b007;
+            font-size: 2.8rem;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        p.subtitle {
+            margin-bottom: 25px;
+            color: #ccc;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            position: relative;
+            max-width: 1200px;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            border: 4px solid #3a3a42;
+            background: #000;
+        }
+
+        /* Responsiveness for image map */
+        .image-mapper {
+            position: relative;
+            width: 100%;
+            display: block;
+        }
+
+        .interactive-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            user-select: none;
+        }
+
+        /* Overlay highlights */
+        .overlay-hotspot {
+            position: absolute;
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            background-color: rgba(226, 176, 7, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay-hotspot:hover {
+            border-color: #e2b007;
+            background-color: rgba(226, 176, 7, 0.3);
+            box-shadow: 0 0 15px rgba(226, 176, 7, 0.6);
+            transform: scale(1.02);
+        }
+
+        .hotspot-number {
+            background-color: rgba(0, 0, 0, 0.75);
+            color: #e2b007;
+            font-weight: bold;
+            font-size: 12px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2b007;
+            pointer-events: none;
+        }
+
+        /* Modal/Information Popup */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #2a2a35;
+            color: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+            border: 2px solid #e2b007;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #e2b007;
+        }
+
+        .modal-title {
+            color: #e2b007;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3e3e4f;
+            padding-bottom: 10px;
+        }
+
+        .modal-desc {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #e0e0e6;
+        }
+
+        .info-footer {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Menyembunyikan tombol saat mode fullscreen di HP */
+        :fullscreen .fullscreen-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="fullscreenBtn" class="fullscreen-btn" onclick="toggleFullScreen()">
+        <span style="font-size: 1.2rem;">&#x26F6;</span> Full Screen
+    </button>
+
+    <h1>SINAU KRAMA</h1>
+    <p class="subtitle">Arahkan kursor atau ketuk pada benda di bawah ini untuk melihat detail penjelasannya!</p>
+
+    <div class="container">
+        <div class="image-mapper">
+            <!-- Menghubungkan ke file gambar persis dengan nama yang diminta -->
+            <img src="meja.png" alt="20 Benda di Meja" class="interactive-img">
+
+            <!-- overlay hotspots -->
+            <!-- baris 1 -->
+            <div class="overlay-hotspot" style="top: 10%; left: 7.3%; width: 13.5%; height: 16%;" onclick="showInfo(0)">
+                <span class="hotspot-number">1</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 11%; left: 25.5%; width: 12.3%; height: 15%;" onclick="showInfo(1)">
+                <span class="hotspot-number">2</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 5.5%; left: 42.5%; width: 6.8%; height: 25%;" onclick="showInfo(2)">
+                <span class="hotspot-number">3</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 2%; left: 54.5%; width: 7.2%; height: 28%;" onclick="showInfo(3)">
+                <span class="hotspot-number">4</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 13%; left: 68%; width: 14%; height: 12%;" onclick="showInfo(4)">
+                <span class="hotspot-number">5</span>
+            </div>
+
+            <!-- baris 2 -->
+            <div class="overlay-hotspot" style="top: 31%; left: 7.5%; width: 9%; height: 17%;" onclick="showInfo(5)">
+                <span class="hotspot-number">6</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 31%; left: 23%; width: 12.5%; height: 18%;" onclick="showInfo(6)">
+                <span class="hotspot-number">7</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 35%; left: 39%; width: 17.5%; height: 9%;" onclick="showInfo(7)">
+                <span class="hotspot-number">8</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 32%; left: 62.8%; width: 8%; height: 17%;" onclick="showInfo(8)">
+                <span class="hotspot-number">9</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 28%; left: 80.5%; width: 12.5%; height: 21%;" onclick="showInfo(9)">
+                <span class="hotspot-number">10</span>
+            </div>
+
+            <!-- baris 3 -->
+            <div class="overlay-hotspot" style="top: 51%; left: 6.2%; width: 12%; height: 18%;" onclick="showInfo(10)">
+                <span class="hotspot-number">11</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 54%; left: 23.5%; width: 12.2%; height: 15%;" onclick="showInfo(11)">
+                <span class="hotspot-number">12</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 52%; left: 42%; width: 11%; height: 17%;" onclick="showInfo(12)">
+                <span class="hotspot-number">13</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 55.5%; left: 60%; width: 9%; height: 11.5%;" onclick="showInfo(13)">
+                <span class="hotspot-number">14</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 53.5%; left: 76%; width: 18%; height: 16%;" onclick="showInfo(14)">
+                <span class="hotspot-number">15</span>
+            </div>
+
+            <!-- baris 4 -->
+            <div class="overlay-hotspot" style="top: 71.5%; left: 6.5%; width: 11%; height: 18%;" onclick="showInfo(15)">
+                <span class="hotspot-number">16</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 74.5%; left: 24.3%; width: 11.5%; height: 16%;" onclick="showInfo(16)">
+                <span class="hotspot-number">17</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 71%; left: 44.2%; width: 7.8%; height: 21.5%;" onclick="showInfo(17)">
+                <span class="hotspot-number">18</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 72%; left: 60%; width: 10.5%; height: 21%;" onclick="showInfo(18)">
+                <span class="hotspot-number">19</span>
+            </div>
+            <div class="overlay-hotspot" style="top: 76.5%; left: 78%; width: 10%; height: 15%;" onclick="showInfo(19)">
+                <span class="hotspot-number">20</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Informasi Popup -->
+    <div id="infoModal" class="modal" onclick="closeOnOutsideClick(event)">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle" class="modal-title">Nama Benda</h2>
+            <p id="modalDesc" class="modal-desc">Deskripsi benda akan ditampilkan di sini.</p>
+            <div class="info-footer">Klik di mana saja atau tanda 'X' untuk kembali</div>
+        </div>
+    </div>
+
+    <script>
+        // Fitur Full Screen
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        // Data penjelasan 20 benda di atas meja
+        const items = [
+            { name: "Buku Tebal Biru", desc: "Sebuah novel atau literatur tebal bersampul keras (hardcover) berwarna biru tua yang diletakkan secara mendatar." },
+            { name: "Buku Resep / Ilustrasi Kuliner", desc: "Sebuah buku dengan ilustrasi aneka hidangan makanan tradisional yang lezat pada sampul depannya." },
+            { name: "Rambu Panah Kanan", desc: "Miniatur tanda lalu lintas berwarna biru dengan panah putih mengarah ke kanan, lengkap dengan tiang dan penyangga kecil." },
+            { name: "Wayang Kulit Tokoh Gatotkaca/Satria", desc: "Miniatur wayang kulit khas Jawa yang dipasang berdiri, menampilkan detail tatahan dan warna yang indah." },
+            { name: "Speaker Bluetooth Portabel", desc: "Sebuah speaker nirkabel berwarna putih dengan desain jaring (mesh) abu-abu di bagian depan untuk memutar audio." },
+            
+            { name: "Blangkon Jawa", desc: "Penutup kepala tradisional pria khas Jawa (Gaya Yogyakarta/Surakarta) dengan motif batik hiasan yang khas." },
+            { name: "Saringan Stainless Steel", desc: "Sebuah colander (saringan) berbahan logam stainless dengan lubang-lubang kecil dan gagang ganda di kedua sisinya." },
+            { name: "Keris Tradisional Jawa", desc: "Senjata tikam tradisional dengan bilah bergelombang (luk) yang khas serta hulu (gagang) kayu berukir estetis." },
+            { name: "Konsol Game Genggam (Handheld)", desc: "Sebuah konsol permainan retro portabel berwarna biru transparan yang biasa digunakan untuk game emulator." },
+            { name: "Gong Kecil dengan Penyangga", desc: "Miniatur alat musik gong tradisional dari bahan kuningan, digantung pada rangka kayu merah berornamen lengkap dengan pemukulnya." },
+            
+            { name: "Kain Batik / Ikat Tradisional", desc: "Lipatan kain tradisional (kemungkinan motif ikat atau batik pesisiran) bernuansa gelap dengan corak merah-oranye." },
+            { name: "Kendang Sunda / Jawa Kecil", desc: "Alat musik perkusi tradisional berlaras ganda (gendang) yang terbuat dari kayu dan kulit dengan pengikat tali rotan." },
+            { name: "Kain Batik Lipat", desc: "Kain batik bermotif klasik (parang/ceplok) berwarna cokelat tua dan keemasan yang terlipat rapi." },
+            { name: "Sabun Batang Hijau", desc: "Sebuah sabun mandi batangan berwarna hijau muda atau mint, diletakkan begitu saja di atas meja." },
+            { name: "Saron / Demung (Gamelan)", desc: "Alat musik pukul bagian dari gamelan dengan bilah-bilah logam keemasan di atas rancakan kayu merah yang diukir indah." },
+            
+            { name: "Rebab Tradisional", desc: "Alat musik gesek tradisional dengan badan kecil bulat yang khas, dilengkapi dengan busur penggeseknya di samping." },
+            { name: "Suling Bambu", desc: "Alat musik tiup tradisional yang terbuat dari bambu dengan beberapa lubang nada di sepanjang badannya." },
+            { name: "Ketipung / Kendang Silinder", desc: "Gendang kecil bermuka tunggal/ganda yang diletakkan vertikal, berfungsi sebagai pengatur tempo musik tradisional." },
+            { name: "Kenong / Bonang Pencon", desc: "Satu unit pencon gamelan dari kuningan yang diletakkan di atas rancakan kayu merah-emas, lengkap dengan pemukul berujung merah." },
+            { name: "Keprak / Kothak Kayu", desc: "Kotak atau blok kayu kecil yang digunakan dalam kesenian wayang atau musik tradisional untuk menghasilkan suara ketukan, lengkap dengan stik kecil." }
+        ];
+
+        function showInfo(index) {
+            const modal = document.getElementById("infoModal");
+            const title = document.getElementById("modalTitle");
+            const desc = document.getElementById("modalDesc");
+
+            title.innerText = `${index + 1}. ${items[index].name}`;
+            desc.innerText = items[index].desc;
+
+            modal.classList.add("active");
+        }
+
+        function closeModal() {
+            document.getElementById("infoModal").classList.remove("active");
+        }
+
+        function closeOnOutsideClick(event) {
+            if (event.target.id === "infoModal") {
+                closeModal();
+            }
+        }
+
+        // Memungkinkan penutupan modal dengan tombol ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
